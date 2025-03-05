@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ru">
+<head>
+    <title>Управление устройствами</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+             /* Исправленные стили панели */
+        .top-navbar {
+             background-color: white;
+             padding: 15px 20px;
+             position: fixed;
+             top: 0;
+             left: 0; /* Добавлено */
+             right: 0; /* Добавлено */
+             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+             z-index: 1000;
+             display: flex; /* Добавлено */
+             justify-content: space-between; /* Добавлено */
+             align-items: center; /* Добавлено */
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 15px; /* Добавлено */
+            align-items: center;
+        }
+
+        .nav-button {
+            color: white;
+            padding: 12px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .admin-btn { background-color: #343a40; }
+        .logout-btn { background-color: #f44336; }
+
+        .admin-btn:hover { background-color: #212529; }
+        .logout-btn:hover { background-color: #da190b; }
+    </style>
+</head>
+<body>
+<!-- Исправленная панель -->
+<nav class="top-navbar">
+    <!-- Левая часть -->
+    <div th:if="${isAdmin}">
+        <a th:href="@{/admin}" class="nav-button admin-btn">
+            Админ панель
+        </a>
+    </div>
+
+    <!-- Правая часть -->
+    <div class="nav-buttons">
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="nav-button logout-btn">Выйти</button>
+        </form>
+    </div>
+</nav>
+<div class="content">
+    <h1>Управление устройствами</h1>
+
+    <table>
+        <!-- Ваша существующая таблица -->
+        <thead>
+        <tr>
+            <th>Оборудование</th>
+            <th>Устройство</th>
+            <th>Тип устройства</th>
+            <th>Значение</th>
+            <th th:if="!${isUser}">Отслеживается</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="device : ${devices}">
+            <td th:text="${device.machineName}">Оборудование</td>
+            <td th:text="${device.deviceType}">Устройство</td>
+            <td th:text="${device.deviceModel}">Тип устройства</td>
+            <td th:id="${device.topic}">Значение</td>
+            <td th:if="!${isUser}">
+                <label>
+                    <input type="checkbox" th:checked="${device.isActive}"
+                           th:attr="onchange='toggleDeviceStatus(this, \'' + ${device.topic} + '\')'">
+                </label>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+<script>
+    const socket = new SockJS('/ws');
+    const stompClient = Stomp.over(socket);
+
+    stompClient.connect({}, function(frame) {
+        console.log('Connected: ' + frame);
+
+        stompClient.subscribe('/topic/data', function(message) {
+            const data = JSON.parse(message.body);
+            updateDeviceValue(data.mqttTopic, data.value);
+        });
+    });
+
+    function updateDeviceValue(topic, value) {
+        const valueCell = document.getElementById(topic);
+        if (valueCell) {
+            const numValue = parseFloat(value)
+            valueCell.textContent = isNaN(numValue) ? value : numValue.toFixed(2);
+        }
+    }
+
+    function toggleDeviceStatus(checkbox, topic) {
+        const isActive = checkbox.checked;
+
+        fetch(`/api/devices/toggle?topic=${encodeURIComponent(topic)}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (!response.ok) {
+                console.error('Ошибка при переключении статуса устройства');
+                checkbox.checked = !isActive;
+            }
+        });
+    }
+</script>
+</body>
+</html>
