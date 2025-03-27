@@ -1,7 +1,6 @@
 package ru.mirea.kefirproduction.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mirea.kefirproduction.dto.DeviceDto;
@@ -9,6 +8,8 @@ import ru.mirea.kefirproduction.model.Sensor;
 import ru.mirea.kefirproduction.model.SensorReading;
 import ru.mirea.kefirproduction.repository.SensorReadingRepository;
 import ru.mirea.kefirproduction.repository.SensorRepository;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,5 +34,10 @@ public class SensorReadingService {
                 .value(value)
                 .build();
         return sensorReadingRepository.save(sensorReading);
+    }
+
+    @Transactional
+    public List<SensorReading> getLast50Readings(Long sensorId) {
+        return sensorReadingRepository.get50NewestReadings(sensorId);
     }
 }

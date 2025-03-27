@@ -4,9 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mirea.kefirproduction.dto.DeviceDto;
+import ru.mirea.kefirproduction.dto.SensorMinMaxValueDto;
 import ru.mirea.kefirproduction.mapper.DeviceMapper;
 import ru.mirea.kefirproduction.model.Machine;
-import ru.mirea.kefirproduction.model.MachineType;
 import ru.mirea.kefirproduction.model.Sensor;
 import ru.mirea.kefirproduction.model.SensorType;
 import ru.mirea.kefirproduction.repository.SensorRepository;
@@ -59,5 +59,17 @@ public class SensorsService {
         sensor.get().setIsActive(!sensor.get().getIsActive());
         sensorRepository.save(sensor.get());
         return sensor.orElse(null);
+    }
+
+    @Transactional
+    public boolean updateMinMaxValue(String topic, SensorMinMaxValueDto dto, Sensor sensor) {
+        if (dto.getMinValue() == null) {
+            dto.setMinValue(sensor.getMinValue());
+        }
+        if (dto.getMaxValue() == null) {
+            dto.setMaxValue(sensor.getMaxValue());
+        }
+        sensorRepository.updateMinMaxValue(topic, dto.getMinValue(), dto.getMaxValue());
+        return true;
     }
 }

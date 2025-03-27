@@ -1,8 +1,67 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="ru">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
     <title>Управление устройствами</title>
     <style>
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        .pagination-container {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            z-index: 1000;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 20px;
+        }
+
+        .change-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 5px;
+            background: #343a40;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+        }
+
+        .change-button:hover {
+            background: #212529;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(128, 128, 128, 0.01);
+        }
+
+        .change-button:active {
+            transform: scale(0.95);
+        }
+
+        .page-title {
+            color: #333;
+            font-size: 18px;
+            font-weight: 600;
+            min-width: 120px;
+            text-align: center;
+            padding: 0 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -21,7 +80,7 @@
              padding: 15px 20px;
              position: fixed;
              top: 0;
-             left: 0; /* Добавлено */
+            left: 0;
              right: 0; /* Добавлено */
              box-shadow: 0 2px 5px rgba(0,0,0,0.1);
              z-index: 1000;
@@ -53,23 +112,33 @@
 
         .admin-btn:hover { background-color: #212529; }
         .logout-btn:hover { background-color: #da190b; }
+
+        tr.expanded {
+            background-color: #f8f9fa;
+        }
+        .chart-container {
+            height: 300px;
+            width: 100%;
+            position: relative;
+        }
+        canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
     </style>
 </head>
 <body>
 <!-- Исправленная панель -->
 <nav class="top-navbar">
-    <!-- Левая часть -->
-    <div th:if="${isAdmin}">
-        <a th:href="@{/admin}" class="nav-button admin-btn">
-            Админ панель
-        </a>
-    </div>
-
-    <!-- Правая часть -->
-    <div class="nav-buttons">
+    <div>
         <form th:action="@{/logout}" method="post">
             <button type="submit" class="nav-button logout-btn">Выйти</button>
         </form>
+    </div>
+    <div th:if="${isAdmin}" class="nav-buttons">
+        <a th:href="@{/admin}" class="nav-button admin-btn">
+            Админ панель
+        </a>
     </div>
 </nav>
 <div class="content">
@@ -87,7 +156,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr th:each="device : ${devices}">
+        <tr style="cursor: pointer" th:each="device : ${devices}" th:data-topic="${device.topic}">
             <td th:text="${device.machineName}">Оборудование</td>
             <td th:text="${device.deviceType}">Устройство</td>
             <td th:text="${device.deviceModel}">Тип устройства</td>
@@ -103,11 +172,18 @@
     </table>
 </div>
 
+<div class="pagination-container">
+    <a href="/scheme" class="change-button">←</a>
+    <div class="page-title">Графики</div>
+    <a href="/scheme" class="change-button">→</a>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.0/dist/sockjs.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 <script>
     const socket = new SockJS('/ws');
     const stompClient = Stomp.over(socket);
+    const charts = new Map();
 
     stompClient.connect({}, function(frame) {
         console.log('Connected: ' + frame);
@@ -115,6 +191,7 @@
         stompClient.subscribe('/topic/data', function(message) {
             const data = JSON.parse(message.body);
             updateDeviceValue(data.mqttTopic, data.value);
+            updateChart(data.mqttTopic, data.value, data.timestamp);
         });
     });
 
@@ -125,6 +202,175 @@
             valueCell.textContent = isNaN(numValue) ? value : numValue.toFixed(2);
         }
     }
+
+    function updateChart(topic, newValue, newTimestamp) {
+        const chart = charts.get(topic);
+        if (!chart) {
+            return;
+        }
+
+        let newDataPoint;
+
+        if (isNaN(parseFloat(newValue))) {
+            if (newValue === 'true') {
+                newDataPoint = {
+                    x: new Date(newTimestamp || Date.now()),
+                    y: 1
+                };
+            } else {
+                newDataPoint = {
+                    x: new Date(newTimestamp || Date.now()),
+                    y: 0
+                };
+            }
+        } else {
+            newDataPoint = {
+                x: new Date(newTimestamp || Date.now()),
+                y: newValue
+            };
+        }
+
+        chart.data.datasets[0].data = [
+            ...chart.data.datasets[0].data,
+            newDataPoint
+        ]
+            .sort((a, b) => a.x - b.x) // Сортируем по времени
+            .slice(-50);
+
+        chart.update();
+    }
+
+    document.querySelectorAll('table tbody tr').forEach(row => {
+        row.addEventListener('click', async function(event) {
+            if (event.target.tagName === 'INPUT') return;
+
+            const topic = this.dataset.topic;
+            const chartRow = this.nextElementSibling;
+
+            if (chartRow?.classList.contains('chart-row')) {
+                chartRow.remove();
+                this.classList.remove('expanded');
+                charts.delete(topic);
+            } else {
+                try {
+                    const response = await fetch(`/api/devices/history?topic=${encodeURIComponent(topic)}`);
+                    let data = await response.json();
+
+                    data = data.sort((a, b) =>
+                        new Date(a.timestamp) - new Date(b.timestamp)
+                    );
+
+                    console.log('First timestamp:', new Date(data[0].timestamp));
+
+                    const newRow = document.createElement('tr');
+                    newRow.className = 'chart-row';
+                    const td = document.createElement('td');
+                    td.colSpan = row.cells.length;
+                    td.innerHTML = '<div class="chart-container"><canvas></canvas></div>';
+
+                    newRow.appendChild(td);
+                    row.insertAdjacentElement('afterend', newRow);
+                    row.classList.add('expanded');
+
+                    const chart = new Chart(td.querySelector('canvas'), {
+                        type: 'line',
+                        data: {
+                            datasets: [{
+                                data: data.map(d => ({
+                                    x: new Date(d.timestamp),  // Используем объекты Date
+                                    y: d.value
+                                })),
+                                borderColor: '#4e73df',
+                                fill: false,
+                                borderWidth: 1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+
+                            interaction: {
+                                mode: 'index',
+                                intersect: false
+                            },
+
+                            plugins: {
+                                legend: {
+                                    display: false // Скрываем легенду
+                                },
+                                title: {
+                                    display: false // Убираем заголовок
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        title: (items) => {
+                                            const date = new Date(items[0].parsed.x);
+                                            return date.toLocaleTimeString();
+                                        }
+                                    }
+                                },
+                                crosshair: {
+                                    line: {
+                                        color: '#666',
+                                        width: 1
+                                    }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    type: 'time',
+                                    time: {
+                                        minUnit: 'second',
+                                        displayFormats: { second: 'HH:mm:ss' },
+                                        tooltipFormat: 'HH:mm:ss'
+                                    },
+                                    bounds: 'data' // Важная настройка!
+                                },
+                                y: {
+                                    beginAtZero: false,
+                                    grid: {
+                                        color: 'rgba(0,0,0,0.05)'
+                                    },
+                                    min: 'auto',
+                                    max: 'auto',
+                                    grace: '5%' // Добавляет 5% отступа сверху и снизу
+                                }
+                            },
+                            elements: {
+                                point: {
+                                    radius: 0 // Скрываем точки на линии
+                                }
+                            }
+                        }
+                    });
+                    // Сохраняем график в хранилище
+                    charts.set(topic, chart);
+
+                    // Добавляем MutationObserver для отслеживания удаления
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            if (mutation.removedNodes) {
+                                Array.from(mutation.removedNodes).forEach((node) => {
+                                    if (node === newRow) {
+                                        charts.delete(topic);
+                                        observer.disconnect();
+                                    }
+                                });
+                            }
+                        });
+                    });
+
+                    // Начинаем наблюдение за родительским элементом
+                    observer.observe(newRow.parentNode, {
+                        childList: true,
+                        subtree: false
+                    });
+                } catch (error) {
+                    console.error('Ошибка загрузки данных:', error);
+                }
+            }
+        });
+    });
 
     function toggleDeviceStatus(checkbox, topic) {
         const isActive = checkbox.checked;

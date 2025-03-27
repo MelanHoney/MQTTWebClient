@@ -5,18 +5,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.eclipse.milo.opcua.stack.core.types.builtin.DateTime;
 
 import java.time.LocalDateTime;
 
 @Data
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class DeviceDataDto {
-    private String mqttTopic;
-    private String value;
-    private Double minValue;
-    private Double maxValue;
+@Builder
+public class DeviceReadingDto {
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
-    private LocalDateTime timestamp;
+    LocalDateTime timestamp;
+    Double value;
 }

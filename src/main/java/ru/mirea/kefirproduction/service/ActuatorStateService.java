@@ -1,7 +1,6 @@
 package ru.mirea.kefirproduction.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mirea.kefirproduction.dto.DeviceDto;
@@ -9,6 +8,8 @@ import ru.mirea.kefirproduction.model.Actuator;
 import ru.mirea.kefirproduction.model.ActuatorState;
 import ru.mirea.kefirproduction.repository.ActuatorRepository;
 import ru.mirea.kefirproduction.repository.ActuatorStateRepository;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -33,5 +34,10 @@ public class ActuatorStateService {
                 .state(value)
                 .build();
         return actuatorStateRepository.save(state);
+    }
+
+    @Transactional
+    List<ActuatorState> getLast50Readings(Long id) {
+        return actuatorStateRepository.get50NewestReadings(id);
     }
 }

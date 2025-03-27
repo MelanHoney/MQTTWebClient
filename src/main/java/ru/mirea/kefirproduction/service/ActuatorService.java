@@ -8,7 +8,6 @@ import ru.mirea.kefirproduction.mapper.DeviceMapper;
 import ru.mirea.kefirproduction.model.Actuator;
 import ru.mirea.kefirproduction.model.ActuatorType;
 import ru.mirea.kefirproduction.model.Machine;
-import ru.mirea.kefirproduction.model.SensorType;
 import ru.mirea.kefirproduction.repository.ActuatorRepository;
 import ru.mirea.kefirproduction.repository.ActuatorTypeRepository;
 

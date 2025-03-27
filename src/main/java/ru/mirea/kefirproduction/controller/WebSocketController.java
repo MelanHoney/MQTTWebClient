@@ -4,6 +4,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Controller;
 import ru.mirea.kefirproduction.dto.DeviceDataDto;
+import ru.mirea.kefirproduction.model.Sensor;
 
 @Controller
 public class WebSocketController {

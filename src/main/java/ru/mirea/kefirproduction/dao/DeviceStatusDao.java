@@ -1,6 +1,5 @@
 package ru.mirea.kefirproduction.dao;
 
-import ru.mirea.kefirproduction.dto.DeviceDto;
 import ru.mirea.kefirproduction.model.Actuator;
 import ru.mirea.kefirproduction.model.Sensor;
 

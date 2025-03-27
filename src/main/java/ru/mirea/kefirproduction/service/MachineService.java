@@ -8,8 +8,6 @@ import ru.mirea.kefirproduction.model.MachineType;
 import ru.mirea.kefirproduction.repository.MachineRepository;
 import ru.mirea.kefirproduction.repository.MachineTypeRepository;
 
-import java.util.Optional;
-
 @Service
 @RequiredArgsConstructor
 public class MachineService {

@@ -30,15 +30,20 @@ public class MqttService {
         if (parts[2].equals("sensors")) {
             Sensor sensor = (Sensor) redisCacheService.findDevice(topic);
             sensorReadingService.save(sensor, Double.parseDouble(message.toString()));
+            sendWebSocketData(topic, message, sensor.getMinValue(), sensor.getMaxValue());
         } else {
             Actuator actuator = (Actuator) redisCacheService.findDevice(topic);
             actuatorStateService.save(actuator, Boolean.parseBoolean(message.toString()));
+            sendWebSocketData(topic, message, null, null);
         }
 
+    }
+
+    private void sendWebSocketData(String topic, MqttMessage message, Double minValue, Double maxValue) {
         if (redisCacheService.getDeviceStatus(topic)) {
-            webSocketService.sendDeviceData(topic, message.toString());
+            webSocketService.sendDeviceData(topic, message.toString(), minValue, maxValue);
         } else {
-            webSocketService.sendDeviceData(topic, "OFFLINE");
+            webSocketService.sendDeviceData(topic, "OFFLINE", null, null);
         }
     }
 
