@@ -6,9 +6,9 @@ import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication
 @EnableAsync
-public class KefirProductionApplication {
+public class MQTTWebClientApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(KefirProductionApplication.class, args);
+        SpringApplication.run(MQTTWebClientApplication.class, args);
     }
 }

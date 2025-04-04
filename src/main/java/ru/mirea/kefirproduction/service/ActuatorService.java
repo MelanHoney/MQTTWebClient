@@ -28,11 +28,6 @@ public class ActuatorService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<DeviceDto> findById(Long id) {
-        return actuatorRepository.findById(id).map(deviceMapper::map);
-    }
-
-    @Transactional(readOnly = true)
     public List<DeviceDto> findAll() {
         return actuatorRepository.findAll().stream()
                 .map(deviceMapper::map)

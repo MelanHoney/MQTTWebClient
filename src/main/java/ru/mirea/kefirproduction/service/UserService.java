@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mirea.kefirproduction.dto.UserInfoDto;
 import ru.mirea.kefirproduction.dto.UserRegistrationDto;
 import ru.mirea.kefirproduction.model.User;
 import ru.mirea.kefirproduction.repository.UserRepository;
@@ -17,8 +18,13 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional(readOnly = true)
-    public List<User> findAll() {
-        return userRepository.findAll();
+    public List<UserInfoDto> findAll() {
+        return userRepository.findAll().stream().map(user -> UserInfoDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .name(user.getName())
+                .role(user.getRole())
+                .build()).toList();
     }
 
     @Transactional
@@ -36,5 +42,10 @@ public class UserService {
     @Transactional
     public void deleteUser(Long id) {
         userRepository.deleteById(id);
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserByEmail(String email) {
+        return userRepository.getByEmail(email);
     }
 }

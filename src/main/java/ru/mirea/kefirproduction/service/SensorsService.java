@@ -55,10 +55,14 @@ public class SensorsService {
 
     @Transactional
     public Sensor toggleSensorStatus(String topic) {
-        var sensor = sensorRepository.findByMqttTopic(topic);
-        sensor.get().setIsActive(!sensor.get().getIsActive());
-        sensorRepository.save(sensor.get());
-        return sensor.orElse(null);
+        var maybeSensor = sensorRepository.findByMqttTopic(topic);
+        if (maybeSensor.isPresent()) {
+            Sensor sensor = maybeSensor.get();
+            sensor.setIsActive(!sensor.getIsActive());
+            sensorRepository.toggleSensorState(topic, sensor.getIsActive());
+            return sensor;
+        }
+        return null;
     }
 
     @Transactional
