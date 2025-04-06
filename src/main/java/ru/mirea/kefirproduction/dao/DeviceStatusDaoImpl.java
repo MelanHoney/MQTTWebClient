@@ -1,6 +1,7 @@
 package ru.mirea.kefirproduction.dao;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 import ru.mirea.kefirproduction.model.Actuator;

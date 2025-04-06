@@ -17,11 +17,11 @@ public class Actuator {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
     @JoinColumn(name = "type_id", nullable = false)
     private ActuatorType actuatorType;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "machine_id")
     private Machine machine;
 

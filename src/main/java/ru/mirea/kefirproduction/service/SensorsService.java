@@ -1,6 +1,7 @@
 package ru.mirea.kefirproduction.service;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mirea.kefirproduction.dto.DeviceDto;

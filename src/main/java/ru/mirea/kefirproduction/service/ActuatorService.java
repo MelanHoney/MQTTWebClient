@@ -1,6 +1,7 @@
 package ru.mirea.kefirproduction.service;
 
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mirea.kefirproduction.dto.DeviceDto;
@@ -55,9 +56,12 @@ public class ActuatorService {
 
     @Transactional
     public Actuator toggleActuatorStatus(String topic) {
-        var actuator = actuatorRepository.findByMqttTopic(topic);
-        actuator.get().setIsActive(!actuator.get().getIsActive());
-        actuatorRepository.save(actuator.get());
-        return actuator.orElse(null);
+        var maybeActuator = actuatorRepository.findByMqttTopic(topic);
+        if (maybeActuator.isPresent()) {
+            Actuator actuator = maybeActuator.get();
+            actuator.setIsActive(!actuator.getIsActive());
+            return actuatorRepository.save(actuator);
+        }
+        return null;
     }
 }

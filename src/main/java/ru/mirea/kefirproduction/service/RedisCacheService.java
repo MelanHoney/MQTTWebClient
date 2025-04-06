@@ -2,6 +2,7 @@ package ru.mirea.kefirproduction.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.mirea.kefirproduction.dao.DeviceStatusDaoImpl;
 import ru.mirea.kefirproduction.dto.DeviceDto;
 import ru.mirea.kefirproduction.mapper.DeviceMapper;
